@@ -1,0 +1,9 @@
+export class HealthService {
+  getHealthStatus() {
+    return {
+      status: 'ok',
+      uptime: process.uptime(),
+      timestamp: new Date().toISOString(),
+    };
+  }
+}

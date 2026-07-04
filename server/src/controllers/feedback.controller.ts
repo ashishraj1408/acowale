@@ -1,36 +1,21 @@
-import type { Request, Response, NextFunction } from 'express';
-import { FeedbackService } from '../services/feedback.service.js';
+import { Request, Response } from 'express';
+import { createFeedbackEntry, listFeedback } from '../services/feedback.service.js';
 
-export class FeedbackController {
-  constructor(private readonly feedbackService = new FeedbackService()) {}
+export const getFeedback = async (req: Request, res: Response) => {
+  const category = req.query.category?.toString();
+  const search = req.query.search?.toString();
+  const page = Number(req.query.page ?? 1);
+  const limit = Number(req.query.limit ?? 10);
+  const feedback = await listFeedback({ category, search, page, limit });
+  res.json(feedback);
+};
 
-  createFeedback = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const feedback = await this.feedbackService.createFeedback(req.body);
-      res.status(201).json(feedback);
-    } catch (error) {
-      next(error);
-    }
-  };
+export const createFeedback = async (req: Request, res: Response) => {
+  const result = await createFeedbackEntry(req.body);
 
-  listFeedback = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const feedback = await this.feedbackService.listFeedback({
-        category: req.query.category as any,
-        search: req.query.search as string | undefined,
-      });
-      res.status(200).json(feedback);
-    } catch (error) {
-      next(error);
-    }
-  };
+  if (!result.success) {
+    return res.status(400).json(result);
+  }
 
-  getAnalytics = async (_req: Request, res: Response, next: NextFunction) => {
-    try {
-      const analytics = await this.feedbackService.getAnalytics();
-      res.status(200).json(analytics);
-    } catch (error) {
-      next(error);
-    }
-  };
-}
+  res.status(201).json(result.data);
+};

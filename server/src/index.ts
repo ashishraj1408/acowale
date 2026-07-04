@@ -1,14 +1,6 @@
-import { createApp } from './app.js';
-import { config } from './config/env.js';
-import { findAvailablePort } from './utils/port.js';
+import app from './app.js';
+import { port } from './config/env.js';
 
-const app = createApp();
-
-async function startServer() {
-  const port = await findAvailablePort(config.port);
-  app.listen(port, '0.0.0.0', () => {
-    console.log(`Server listening on http://localhost:${port}`);
-  });
-}
-
-void startServer();
+app.listen(port, () => {
+  console.log(`Server is running at http://localhost:${port}`);
+});

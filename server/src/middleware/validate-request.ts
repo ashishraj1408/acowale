@@ -1,22 +1,14 @@
-import type { NextFunction, Request, Response } from 'express';
-import { z } from 'zod';
-import { AppError } from '../utils/app-error.js';
+import { NextFunction, Request, Response } from 'express';
+import { validateFeedback } from '../validations/feedback.validation.js';
 
-const feedbackSchema = z.object({
-  category: z.enum(['BUG', 'FEATURE', 'IMPROVEMENT', 'GENERAL'], {
-    errorMap: () => ({ message: 'Category is required' }),
-  }),
-  comment: z.string().trim().min(10, 'Comment must be at least 10 characters long').max(1000, 'Comment must be at most 1000 characters long'),
-});
+export default function validateRequest(req: Request, res: Response, next: NextFunction) {
+  if (req.path === '/feedback' && req.method === 'POST') {
+    const validation = validateFeedback(req.body);
 
-export function validateFeedback(req: Request, _res: Response, next: NextFunction) {
-  const result = feedbackSchema.safeParse(req.body);
-
-  if (!result.success) {
-    const message = result.error.issues[0]?.message ?? 'Validation failed';
-    return next(new AppError(400, message));
+    if (!validation.success) {
+      return res.status(400).json(validation);
+    }
   }
 
-  req.body = result.data;
   next();
 }

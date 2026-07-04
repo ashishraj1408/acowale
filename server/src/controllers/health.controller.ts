@@ -1,11 +1,5 @@
-import type { Request, Response } from 'express';
-import { HealthService } from '../services/health.service.js';
+import { Request, Response } from 'express';
 
-export class HealthController {
-  constructor(private readonly healthService: HealthService = new HealthService()) {}
-
-  getHealth = (_req: Request, res: Response) => {
-    const payload = this.healthService.getHealthStatus();
-    res.status(200).json(payload);
-  };
-}
+export const getHealth = (_req: Request, res: Response) => {
+  res.json({ status: 'ok', uptime: process.uptime(), timestamp: new Date().toISOString() });
+};

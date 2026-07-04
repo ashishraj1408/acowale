@@ -1,44 +1,41 @@
 import { prisma } from '../config/prisma.js';
-import type { FeedbackCategory } from '../types/feedback.js';
+import { FeedbackInput } from '../types/feedback.js';
 
-export class FeedbackRepository {
-  async create(data: { category: FeedbackCategory; comment: string }) {
-    return prisma.feedback.create({ data });
+export const getFeedback = async (filters: { category?: string; search?: string; page?: number; limit?: number }) => {
+  const where: any = {};
+
+  if (filters.category) {
+    where.category = filters.category;
   }
 
-  async list(query?: { category?: FeedbackCategory; search?: string }) {
-    const where = {
-      ...(query?.category ? { category: query.category } : {}),
-      ...(query?.search
-        ? {
-            comment: {
-              contains: query.search,
-              mode: 'insensitive' as const,
-            },
-          }
-        : {}),
-    };
-
-    return prisma.feedback.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-    });
+  if (filters.search) {
+    where.comment = { contains: filters.search, mode: 'insensitive' };
   }
 
-  async count() {
-    return prisma.feedback.count();
-  }
+  const page = Number(filters.page ?? 1);
+  const limit = Number(filters.limit ?? 10);
+  const take = Math.max(1, Math.min(100, limit));
+  const skip = Math.max(0, (Math.max(page, 1) - 1) * take);
 
-  async analytics() {
-    const feedbacks = await prisma.feedback.findMany({
-      select: { category: true },
-    });
+  const [items, total] = await Promise.all([
+    prisma.feedback.findMany({ where, orderBy: { createdAt: 'desc' }, skip, take }),
+    prisma.feedback.count({ where }),
+  ]);
 
-    const totals = feedbacks.reduce<Record<string, number>>((acc, item) => {
-      acc[item.category] = (acc[item.category] ?? 0) + 1;
-      return acc;
-    }, {});
+  return {
+    items,
+    total,
+    page: Math.max(1, page),
+    limit: take,
+    totalPages: Math.max(1, Math.ceil(total / take)),
+  };
+};
 
-    return Object.entries(totals).map(([category, count]) => ({ category, count }));
-  }
-}
+export const createFeedback = async (input: FeedbackInput) => {
+  return prisma.feedback.create({
+    data: {
+      category: input.category as string,
+      comment: input.comment?.trim() as string,
+    },
+  });
+};

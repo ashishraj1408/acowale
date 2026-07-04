@@ -1,6 +1,7 @@
-import type { NextFunction, Request, Response } from 'express';
+import { NextFunction, Request, Response } from 'express';
+import { logInfo } from '../utils/logger.js';
 
-export function requestLogger(req: Request, _res: Response, next: NextFunction) {
-  console.info(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
+export default function requestLogger(req: Request, _res: Response, next: NextFunction) {
+  logInfo(`${req.method} ${req.originalUrl}`);
   next();
 }
